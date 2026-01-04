@@ -583,8 +583,8 @@ jobs:
 
           KSU_API_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/$BRANCH_NAME/kernel/Kbuild" | \
             grep -m1 "KSU_VERSION_API :=" | awk -F'= ' '{print $2}' | tr -d '[:space:]')
-          if [[ -z "$KSU_API_VERSION" || "$(printf '%s\n' "$KSU_API_VERSION" "3.1.7" | sort -V | head -n1)" != "3.1.7" ]]; then
-            KSU_API_VERSION="3.1.7"
+          if [[ -z "$KSU_API_VERSION" || "$(printf '%s\n' "$KSU_API_VERSION" "3.1.8" | sort -V | head -n1)" != "3.1.8" ]]; then
+            KSU_API_VERSION="3.1.8"
           fi
           echo "KSU_API_VERSION=$KSU_API_VERSION" >> $GITHUB_ENV
 
