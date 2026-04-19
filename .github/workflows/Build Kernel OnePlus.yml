@@ -777,6 +777,34 @@ jobs:
           grep -nE '^(REPO_OWNER|REPO_NAME|REPO_BRANCH|KSU_VERSION_API|KSU_VERSION_FULL|VERSION_TAG|GIT_BIN|CURL_BIN)' kernel/Makefile
           echo "::endgroup::"
 
+      - name: Fix KernelSU allowlist.c Compilation
+        run: |
+          cd kernel_workspace/kernel_platform
+          # Find and fix allowlist.c if it has compilation errors
+          ALLOWLIST_FILE=$(find . -name "allowlist.c" -path "*/kernelsu/policy/*" | head -n 1)
+          if [ -n "$ALLOWLIST_FILE" ]; then
+            echo "📝 正在检查 $ALLOWLIST_FILE..."
+            # Count #if directives
+            IF_COUNT=$(grep -c '^\s*#\s*\(if\|ifdef\|ifndef\)' "$ALLOWLIST_FILE" || echo 0)
+            # Count #endif directives  
+            ENDIF_COUNT=$(grep -c '^\s*#\s*endif' "$ALLOWLIST_FILE" || echo 0)
+            
+            echo "  条件指令数: $IF_COUNT"
+            echo "  endif数: $ENDIF_COUNT"
+            
+            if [ "$ENDIF_COUNT" -gt "$IF_COUNT" ]; then
+              echo "⚠️ 检测到 $((ENDIF_COUNT - IF_COUNT)) 个多余 #endif，正在修复..."
+              cp "$ALLOWLIST_FILE" "$ALLOWLIST_FILE.bak"
+              # Use awk to fix the file by tracking #if and #endif balance
+              awk 'BEGIN{stack=0} /^[[:space:]]*#[[:space:]]*(if|ifdef|ifndef)/{stack++; print; next} /^[[:space:]]*#[[:space:]]*endif/{if(stack>0){stack--; print} else{next} next} {print}' "$ALLOWLIST_FILE.bak" > "$ALLOWLIST_FILE"
+              echo "✅ 已修复 allowlist.c"
+            else
+              echo "✅ allowlist.c 无需修复"
+            fi
+          else
+            echo "⚠️ 未找到 allowlist.c"
+          fi
+
       - name: Apply Patches SukiSU Ultra
         env:
           FILE: ${{ github.event.inputs.FILE }}
